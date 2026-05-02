@@ -62,6 +62,22 @@ public class UserController {
         return ResponseEntity.ok(ApiResponse.success(userService.removeFromWishlist(auth.getName(), productId)));
     }
 
+    @PostMapping("/ping")
+    public ResponseEntity<ApiResponse<Void>> ping(Authentication auth) {
+        userService.pingUser(auth.getName());
+        return ResponseEntity.ok(ApiResponse.success("Ping successful", null));
+    }
+
+    @GetMapping("/{userId}/status")
+    public ResponseEntity<ApiResponse<java.time.LocalDateTime>> getUserStatus(@PathVariable String userId) {
+        return ResponseEntity.ok(ApiResponse.success(userService.getUserLastSeen(userId)));
+    }
+
+    @GetMapping("/admin/status")
+    public ResponseEntity<ApiResponse<java.time.LocalDateTime>> getAdminStatus() {
+        return ResponseEntity.ok(ApiResponse.success(userService.getAdminLastSeen()));
+    }
+
     @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/admin/all")
     public ResponseEntity<ApiResponse<List<User>>> getAllUsers() {

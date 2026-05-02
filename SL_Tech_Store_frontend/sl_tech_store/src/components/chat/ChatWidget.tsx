@@ -10,25 +10,51 @@ export default function ChatWidget() {
   const [room, setRoom] = useState<ChatRoom | null>(null);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState('');
+  const [adminStatus, setAdminStatus] = useState<string>('Support Team');
   const { user } = useAuthStore();
   const bottomRef = useRef<HTMLDivElement>(null);
   const intervalRef = useRef<ReturnType<typeof setInterval>>();
+  const pingIntervalRef = useRef<ReturnType<typeof setInterval>>();
 
   useEffect(() => {
     if (!open) return;
     api.get('/chat/room').then(r => { setRoom(r.data.data); loadMessages(r.data.data.id); });
-    return () => { if (intervalRef.current) clearInterval(intervalRef.current); };
+    
+    // Ping to update lastSeenAt
+    api.post('/users/ping').catch(() => {});
+    pingIntervalRef.current = setInterval(() => api.post('/users/ping').catch(() => {}), 10000);
+
+    return () => { 
+      if (intervalRef.current) clearInterval(intervalRef.current); 
+      if (pingIntervalRef.current) clearInterval(pingIntervalRef.current);
+    };
   }, [open]);
 
   const loadMessages = (roomId: string) => {
-    api.get(`/chat/room/${roomId}/messages?page=0&size=50`).then(r => {
-      setMessages((r.data.data?.content || []).reverse());
-      setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);
-    });
+    const fetchMsgs = () => {
+      api.get(`/chat/room/${roomId}/messages?page=0&size=50`).then(r => {
+        setMessages((r.data.data?.content || []).reverse());
+      });
+      api.get('/users/admin/status').then(r => {
+        if (!r.data.data) {
+          setAdminStatus('Offline');
+          return;
+        }
+        const lastSeenLocal = new Date(r.data.data + 'Z');
+        const now = new Date();
+        if ((now.getTime() - lastSeenLocal.getTime()) < 30000) {
+          setAdminStatus('Online');
+        } else {
+          setAdminStatus('Offline');
+        }
+      }).catch(() => setAdminStatus('Offline'));
+    };
+
+    fetchMsgs();
+    setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);
+
     if (intervalRef.current) clearInterval(intervalRef.current);
-    intervalRef.current = setInterval(() => {
-      api.get(`/chat/room/${roomId}/messages?page=0&size=50`).then(r => setMessages((r.data.data?.content || []).reverse()));
-    }, 3000);
+    intervalRef.current = setInterval(fetchMsgs, 3000);
   };
 
   const send = async () => {
@@ -57,8 +83,14 @@ export default function ChatWidget() {
       )}
       {open && (
         <div className="chat-window">
-          <div className="chat-header">
-            <span>💬 Support Chat</span>
+          <div className="chat-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div style={{ display: 'flex', flexDirection: 'column' }}>
+              <span>💬 Support Chat</span>
+              <span style={{ fontSize: 11, fontWeight: 500, color: adminStatus === 'Online' ? '#86efac' : 'rgba(255,255,255,0.7)', display: 'flex', alignItems: 'center', gap: 4, marginTop: 2 }}>
+                {adminStatus === 'Online' && <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#86efac', display: 'inline-block' }} />}
+                {adminStatus === 'Online' ? 'Active now' : 'Typically replies in a few minutes'}
+              </span>
+            </div>
             <button onClick={() => setOpen(false)}><FiX /></button>
           </div>
           <div className="chat-messages">

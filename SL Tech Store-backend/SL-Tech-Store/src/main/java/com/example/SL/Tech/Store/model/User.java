@@ -47,6 +47,8 @@ public class User {
 
     private LocalDateTime updatedAt;
 
+    private LocalDateTime lastSeenAt;
+
     public enum Role {
         USER, ADMIN
     }

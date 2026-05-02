@@ -11,38 +11,75 @@ export default function AdminChat() {
   const [selected, setSelected] = useState<ChatRoom | null>(null);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState('');
+  const [onlineStatus, setOnlineStatus] = useState<string>('');
   const { user } = useAuthStore();
   const bottomRef = useRef<HTMLDivElement>(null);
   const intervalRef = useRef<ReturnType<typeof setInterval>>();
+  const pingIntervalRef = useRef<ReturnType<typeof setInterval>>();
 
   useEffect(() => {
     api.get('/chat/rooms').then(r => setRooms(r.data.data || [])).catch(() => {});
-    return () => { if (intervalRef.current) clearInterval(intervalRef.current); };
+    
+    // Ping to update lastSeenAt
+    api.post('/users/ping').catch(() => {});
+    pingIntervalRef.current = setInterval(() => api.post('/users/ping').catch(() => {}), 10000);
+
+    return () => { 
+      if (intervalRef.current) clearInterval(intervalRef.current); 
+      if (pingIntervalRef.current) clearInterval(pingIntervalRef.current);
+    };
   }, []);
 
   const selectRoom = (room: ChatRoom) => {
     setSelected(room);
-    loadMessages(room.id);
+    setOnlineStatus('Loading...');
+    loadMessages(room);
     api.post(`/chat/room/${room.id}/read`).catch(() => {});
   };
 
-  const loadMessages = (roomId: string) => {
-    api.get(`/chat/room/${roomId}/messages?page=0&size=50`).then(r => {
-      setMessages((r.data.data?.content || []).reverse());
-      setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);
-    });
+  const loadMessages = (room: ChatRoom) => {
+    const fetchMsgs = () => {
+      api.get(`/chat/room/${room.id}/messages?page=0&size=50`).then(r => {
+        setMessages((r.data.data?.content || []).reverse());
+      });
+      api.get(`/users/${room.userId}/status`).then(r => {
+        if (!r.data.data) {
+          setOnlineStatus('Offline');
+          return;
+        }
+        const lastSeen = new Date(r.data.data + 'Z'); // Add Z to fix UTC parsing
+        const now = new Date();
+        // Since the server time is local, wait, LocalDateTime is tricky.
+        // Assuming server and client are in the same zone or using relative time
+        // Just compare with server time if possible, or just parse directly
+        const lastSeenLocal = new Date(r.data.data);
+        if ((now.getTime() - lastSeenLocal.getTime()) < 30000) {
+          setOnlineStatus('Online');
+        } else {
+          setOnlineStatus('Last seen: ' + lastSeenLocal.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }));
+        }
+      }).catch(() => setOnlineStatus('Offline'));
+    };
+
+    fetchMsgs();
+    setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);
+
     if (intervalRef.current) clearInterval(intervalRef.current);
-    intervalRef.current = setInterval(() => {
-      api.get(`/chat/room/${roomId}/messages?page=0&size=50`).then(r => setMessages((r.data.data?.content || []).reverse()));
-    }, 3000);
+    intervalRef.current = setInterval(fetchMsgs, 3000);
   };
 
   const send = async () => {
     if (!input.trim() || !selected) return;
+    const msg: any = { roomId: selected.id, content: input, type: 'TEXT' };
+    
+    // Optimistic UI update
     const localMsg: ChatMessage = { id: Date.now().toString(), roomId: selected.id, senderId: user?.id || '', senderName: user?.name || 'Admin', senderRole: 'ADMIN', content: input, type: 'TEXT', read: false, timestamp: new Date().toISOString() };
     setMessages(prev => [...prev, localMsg]);
     setInput('');
     setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);
+
+    // Send via REST
+    await api.post('/chat/room/' + selected.id + '/send', msg).catch(() => null);
   };
 
   return (
@@ -89,8 +126,12 @@ export default function AdminChat() {
               </div>
             ) : (
               <>
-                <div style={{ padding: '16px 20px', background: 'white', borderBottom: '1px solid var(--gray-100)', fontWeight: 700 }}>
+                <div style={{ padding: '16px 20px', background: 'white', borderBottom: '1px solid var(--gray-100)', fontWeight: 700, display: 'flex', alignItems: 'center', gap: 10 }}>
                   {selected.userName}
+                  <span style={{ fontSize: 12, fontWeight: 500, color: onlineStatus === 'Online' ? 'var(--success)' : 'var(--gray-400)', display: 'flex', alignItems: 'center', gap: 4 }}>
+                    {onlineStatus === 'Online' && <span style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--success)', display: 'inline-block' }} />}
+                    {onlineStatus}
+                  </span>
                 </div>
                 <div style={{ flex: 1, overflowY: 'auto', padding: 20, display: 'flex', flexDirection: 'column', gap: 8 }}>
                   {messages.map(m => (

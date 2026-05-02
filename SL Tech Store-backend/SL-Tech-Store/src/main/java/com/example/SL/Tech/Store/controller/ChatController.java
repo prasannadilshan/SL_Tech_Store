@@ -54,4 +54,11 @@ public class ChatController {
         ChatMessage message = chatService.sendMessage(dto.getRoomId(), auth.getName(), dto.getContent(), dto.getType());
         messagingTemplate.convertAndSend("/topic/chat/" + dto.getRoomId(), message);
     }
+
+    @PostMapping("/room/{roomId}/send")
+    public ResponseEntity<ApiResponse<ChatMessage>> sendRestMessage(@PathVariable String roomId, @RequestBody ChatMessageDto dto, Authentication auth) {
+        ChatMessage message = chatService.sendMessage(roomId, auth.getName(), dto.getContent(), dto.getType());
+        messagingTemplate.convertAndSend("/topic/chat/" + roomId, message);
+        return ResponseEntity.ok(ApiResponse.success(message));
+    }
 }

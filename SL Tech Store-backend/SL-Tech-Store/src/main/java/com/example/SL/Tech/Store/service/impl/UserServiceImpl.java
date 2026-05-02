@@ -204,4 +204,25 @@ public class UserServiceImpl {
         user.setRole(role);
         return userRepository.save(user);
     }
+
+    public void pingUser(String userId) {
+        userRepository.findById(userId).ifPresent(user -> {
+            user.setLastSeenAt(LocalDateTime.now());
+            userRepository.save(user);
+        });
+    }
+
+    public LocalDateTime getUserLastSeen(String userId) {
+        return userRepository.findById(userId)
+                .map(User::getLastSeenAt)
+                .orElse(null);
+    }
+
+    public LocalDateTime getAdminLastSeen() {
+        return userRepository.findByRole(User.Role.ADMIN).stream()
+                .map(User::getLastSeenAt)
+                .filter(java.util.Objects::nonNull)
+                .max(java.time.LocalDateTime::compareTo)
+                .orElse(null);
+    }
 }
