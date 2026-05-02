@@ -1,8 +1,8 @@
 import axios from 'axios';
 import { getCookie, removeCookie } from '../utils/cookies';
 
-export const API_BASE_URL = 'http://localhost:8080/api';
-export const BACKEND_URL = 'http://localhost:8080';
+export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+export const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
 
 // Helper to resolve image URLs (handles both relative and absolute URLs)
 export const getImageUrl = (url: string | undefined): string => {
