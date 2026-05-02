@@ -32,9 +32,12 @@
 .pc-current { font-size: 18px; font-weight: 800; color: var(--primary-700); }
 
 @media (max-width: 768px) {
-  .hero { flex-direction: column; padding: 40px 20px; min-height: auto; text-align: center; }
-  .hero h1 { font-size: 32px; }
-  .hero-actions { justify-content: center; }
+  .hero { flex-direction: column; padding: 48px 16px; min-height: auto; text-align: center; gap: 32px; }
+  .hero h1 { font-size: 36px; margin-bottom: 16px; }
+  .hero p { font-size: 16px; margin-bottom: 24px; }
+  .hero-actions { justify-content: center; width: 100%; }
+  .hero-actions .btn { width: 100%; }
   .hero-visual { display: none; }
-  .features-grid { grid-template-columns: repeat(2, 1fr); }
+  .features-grid { grid-template-columns: repeat(2, 1fr); gap: 12px; }
+  .feature-card { padding: 20px 12px; }
 }

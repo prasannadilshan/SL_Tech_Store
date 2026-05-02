@@ -52,7 +52,7 @@ export default function ProductDetail() {
 
   return (
     <div className="container section">
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 40, alignItems: 'start' }}>
+      <div className="responsive-grid-2" style={{ alignItems: 'start' }}>
         <div>
           <div style={{ background: 'var(--gray-50)', borderRadius: 16, padding: 20, marginBottom: 12 }}>
             {imgs.length > 0 ? <img src={getImageUrl(imgs[selectedImg]?.url)} alt={product.name} style={{ width: '100%', borderRadius: 12 }} />
