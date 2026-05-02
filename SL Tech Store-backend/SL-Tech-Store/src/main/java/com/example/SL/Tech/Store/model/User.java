@@ -40,6 +40,8 @@ public class User {
 
     private List<String> wishlist = new ArrayList<>();
 
+    private List<SavedPaymentMethod> paymentMethods = new ArrayList<>();
+
     @CreatedDate
     private LocalDateTime createdAt;
 
@@ -61,6 +63,16 @@ public class User {
         private String state;
         private String postalCode;
         private String country;
+        private boolean isDefault;
+    }
+
+    @Data
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class SavedPaymentMethod {
+        private String id;
+        private String type; // COD, STRIPE
+        private String details;
         private boolean isDefault;
     }
 }

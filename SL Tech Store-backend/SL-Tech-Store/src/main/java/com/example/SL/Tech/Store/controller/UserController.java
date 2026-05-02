@@ -37,6 +37,21 @@ public class UserController {
         return ResponseEntity.ok(ApiResponse.success(userService.removeAddress(auth.getName(), addressId)));
     }
 
+    @PutMapping("/addresses/{addressId}")
+    public ResponseEntity<ApiResponse<User>> updateAddress(Authentication auth, @PathVariable String addressId, @RequestBody User.Address address) {
+        return ResponseEntity.ok(ApiResponse.success(userService.updateAddress(auth.getName(), addressId, address)));
+    }
+
+    @PostMapping("/payment-methods")
+    public ResponseEntity<ApiResponse<User>> addPaymentMethod(Authentication auth, @RequestBody User.SavedPaymentMethod paymentMethod) {
+        return ResponseEntity.ok(ApiResponse.success(userService.addPaymentMethod(auth.getName(), paymentMethod)));
+    }
+
+    @DeleteMapping("/payment-methods/{methodId}")
+    public ResponseEntity<ApiResponse<User>> removePaymentMethod(Authentication auth, @PathVariable String methodId) {
+        return ResponseEntity.ok(ApiResponse.success(userService.removePaymentMethod(auth.getName(), methodId)));
+    }
+
     @PostMapping("/wishlist/{productId}")
     public ResponseEntity<ApiResponse<User>> addToWishlist(Authentication auth, @PathVariable String productId) {
         return ResponseEntity.ok(ApiResponse.success(userService.addToWishlist(auth.getName(), productId)));

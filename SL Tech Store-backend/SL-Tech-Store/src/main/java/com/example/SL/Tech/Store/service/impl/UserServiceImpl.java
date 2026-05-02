@@ -143,6 +143,41 @@ public class UserServiceImpl {
         return userRepository.save(user);
     }
 
+    public User updateAddress(String userId, String addressId, User.Address updatedAddress) {
+        User user = getProfile(userId);
+        for (int i = 0; i < user.getAddresses().size(); i++) {
+            User.Address a = user.getAddresses().get(i);
+            if (a.getId().equals(addressId)) {
+                updatedAddress.setId(addressId);
+                if (updatedAddress.isDefault()) {
+                    user.getAddresses().forEach(addr -> addr.setDefault(false));
+                }
+                user.getAddresses().set(i, updatedAddress);
+                break;
+            }
+        }
+        return userRepository.save(user);
+    }
+
+    public User addPaymentMethod(String userId, User.SavedPaymentMethod paymentMethod) {
+        User user = getProfile(userId);
+        paymentMethod.setId(UUID.randomUUID().toString());
+
+        if (paymentMethod.isDefault() || user.getPaymentMethods().isEmpty()) {
+            user.getPaymentMethods().forEach(p -> p.setDefault(false));
+            paymentMethod.setDefault(true);
+        }
+
+        user.getPaymentMethods().add(paymentMethod);
+        return userRepository.save(user);
+    }
+
+    public User removePaymentMethod(String userId, String paymentMethodId) {
+        User user = getProfile(userId);
+        user.getPaymentMethods().removeIf(p -> p.getId().equals(paymentMethodId));
+        return userRepository.save(user);
+    }
+
     // Wishlist operations
     public User addToWishlist(String userId, String productId) {
         User user = getProfile(userId);

@@ -6,8 +6,16 @@ export interface User {
   phone?: string;
   role: 'USER' | 'ADMIN';
   addresses: Address[];
+  paymentMethods: SavedPaymentMethod[];
   wishlist: string[];
   createdAt: string;
+}
+
+export interface SavedPaymentMethod {
+  id: string;
+  type: 'COD' | 'STRIPE';
+  details: string;
+  isDefault: boolean;
 }
 
 export interface Address {

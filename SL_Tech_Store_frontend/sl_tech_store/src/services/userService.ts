@@ -7,8 +7,14 @@ export const userService = {
     api.put<ApiResponse<User>>(`/users/profile`, null, { params: { name, phone } }),
   addAddress: (address: Record<string, unknown>) =>
     api.post<ApiResponse<User>>('/users/addresses', address),
+  updateAddress: (id: string, address: Record<string, unknown>) =>
+    api.put<ApiResponse<User>>(`/users/addresses/${id}`, address),
   removeAddress: (id: string) =>
     api.delete<ApiResponse<User>>(`/users/addresses/${id}`),
+  addPaymentMethod: (method: Record<string, unknown>) =>
+    api.post<ApiResponse<User>>('/users/payment-methods', method),
+  removePaymentMethod: (id: string) =>
+    api.delete<ApiResponse<User>>(`/users/payment-methods/${id}`),
   addToWishlist: (productId: string) =>
     api.post<ApiResponse<User>>(`/users/wishlist/${productId}`),
   removeFromWishlist: (productId: string) =>
