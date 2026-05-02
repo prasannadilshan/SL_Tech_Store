@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { getCookie, removeCookie } from '../utils/cookies';
 
 export const API_BASE_URL = 'http://localhost:8080/api';
 export const BACKEND_URL = 'http://localhost:8080';
@@ -17,7 +18,7 @@ const api = axios.create({
 
 // JWT interceptor
 api.interceptors.request.use((config) => {
-  const token = localStorage.getItem('token');
+  const token = getCookie('token');
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
@@ -29,8 +30,8 @@ api.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
-      localStorage.removeItem('token');
-      localStorage.removeItem('user');
+      removeCookie('token');
+      removeCookie('user');
       window.location.href = '/login';
     }
     return Promise.reject(error);

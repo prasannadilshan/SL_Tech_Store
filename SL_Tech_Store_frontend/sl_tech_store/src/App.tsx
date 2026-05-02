@@ -18,6 +18,7 @@ import ManageOrders from './pages/admin/ManageOrders';
 import ManageUsers from './pages/admin/ManageUsers';
 import AdminChat from './pages/admin/AdminChat';
 import ChatWidget from './components/chat/ChatWidget';
+import CookieConsent from './components/layout/CookieConsent';
 import { useAuthStore } from './store/authStore';
 import './App.css';
 
@@ -53,6 +54,7 @@ function App() {
       </main>
       {!isAdmin && <Footer />}
       {isAuthenticated && user?.role !== 'ADMIN' && !isAdmin && <ChatWidget />}
+      <CookieConsent />
     </div>
   );
 }

@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import type { AuthResponse } from '../types';
+import { getCookie, setCookie, removeCookie } from '../utils/cookies';
 
 interface AuthState {
   user: AuthResponse | null;
@@ -10,16 +11,16 @@ interface AuthState {
 }
 
 export const useAuthStore = create<AuthState>((set, get) => ({
-  user: JSON.parse(localStorage.getItem('user') || 'null'),
-  isAuthenticated: !!localStorage.getItem('token'),
+  user: JSON.parse(getCookie('user') || 'null'),
+  isAuthenticated: !!getCookie('token'),
   login: (data: AuthResponse) => {
-    localStorage.setItem('token', data.token);
-    localStorage.setItem('user', JSON.stringify(data));
+    setCookie('token', data.token);
+    setCookie('user', JSON.stringify(data));
     set({ user: data, isAuthenticated: true });
   },
   logout: () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
+    removeCookie('token');
+    removeCookie('user');
     set({ user: null, isAuthenticated: false });
   },
   isAdmin: () => get().user?.role === 'ADMIN',

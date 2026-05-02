@@ -12,6 +12,8 @@ const emptyForm = { name: '', brand: '', model: '', description: '', price: 0, d
 export default function ManageProducts() {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
+  const [page, setPage] = useState(0);
+  const [totalPages, setTotalPages] = useState(0);
   const [showForm, setShowForm] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
   const [form, setForm] = useState<any>({ ...emptyForm });
@@ -20,8 +22,8 @@ export default function ManageProducts() {
   const [imagePreviews, setImagePreviews] = useState<string[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const load = () => { setLoading(true); productService.getProducts({ page: 0, size: 100 }).then(r => setProducts(r.data.data?.content || [])).catch(() => {}).finally(() => setLoading(false)); };
-  useEffect(load, []);
+  const load = () => { setLoading(true); productService.getProducts({ page, size: 10 }).then(r => { setProducts(r.data.data?.content || []); setTotalPages(r.data.data?.totalPages || 0); }).catch(() => {}).finally(() => setLoading(false)); };
+  useEffect(load, [page]);
 
   const openAdd = () => { setForm({ ...emptyForm }); setEditId(null); setImageFiles([]); setImagePreviews([]); setShowForm(true); };
   const openEdit = (p: Product) => { setForm({ name: p.name, brand: p.brand, model: p.model, description: p.description, price: p.price, discount: p.discount, stock: p.stock, category: p.category, featured: p.featured, active: p.active, specs: p.specs || emptyForm.specs }); setEditId(p.id); setImageFiles([]); setImagePreviews([]); setShowForm(true); };
@@ -132,6 +134,22 @@ export default function ManageProducts() {
                 </tbody>
               </table>
             </div>
+            {totalPages > 1 && (
+              <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 8, marginTop: 24 }}>
+                <button className="btn btn-outline btn-sm" disabled={page === 0} onClick={() => setPage(p => Math.max(0, p - 1))}>Previous</button>
+                {Array.from({ length: totalPages }, (_, i) => {
+                  if (i === 0 || i === totalPages - 1 || Math.abs(page - i) <= 1) {
+                    return <button key={i} className={`btn ${i === page ? 'btn-primary' : 'btn-outline'} btn-sm`} onClick={() => setPage(i)}>{i + 1}</button>;
+                  } else if (i === 1 && page > 2) {
+                    return <span key={i} style={{ color: 'var(--gray-500)' }}>...</span>;
+                  } else if (i === totalPages - 2 && page < totalPages - 3) {
+                    return <span key={i} style={{ color: 'var(--gray-500)' }}>...</span>;
+                  }
+                  return null;
+                })}
+                <button className="btn btn-outline btn-sm" disabled={page >= totalPages - 1} onClick={() => setPage(p => Math.min(totalPages - 1, p + 1))}>Next</button>
+              </div>
+            )}
           </div>
         )}
 
