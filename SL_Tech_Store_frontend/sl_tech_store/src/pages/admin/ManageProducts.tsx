@@ -212,7 +212,7 @@ export default function ManageProducts() {
                   <div style={{ marginBottom: 20 }}>
                     <label style={{ display: 'block', marginBottom: 8, fontSize: 13, color: 'var(--gray-500)' }}>Current Images</label>
                     <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-                      {existingImages.map((img, i) => (
+                      {existingImages.map((img) => (
                         <div key={img.driveFileId} style={{ position: 'relative', width: 90, height: 90, borderRadius: 10, overflow: 'hidden', border: img.isPrimary ? '3px solid var(--primary-500)' : '2px solid var(--gray-200)' }}>
                           <img src={getImageUrl(img.url)} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                           <button type="button" onClick={() => handleDeleteExistingImage(img.driveFileId)} style={{ position: 'absolute', top: 2, right: 2, width: 22, height: 22, borderRadius: '50%', background: 'var(--danger)', color: 'white', border: 'none', fontSize: 12, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><FiTrash2 /></button>
