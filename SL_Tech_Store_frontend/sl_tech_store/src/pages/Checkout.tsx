@@ -183,8 +183,6 @@ export default function Checkout() {
   }
 
   return (
-    <Elements stripe={stripePromise} options={{ clientSecret, appearance: { theme: 'stripe' } }}>
-      <CheckoutContent />
-    </Elements>
+    <></>
   );
 }

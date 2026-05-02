@@ -1,58 +1,67 @@
 package com.example.SL.Tech.Store.service;
 
 import com.example.SL.Tech.Store.model.Product;
+import com.google.api.client.http.FileContent;
+import com.google.api.services.drive.Drive;
+import com.google.api.services.drive.model.File;
+import com.google.api.services.drive.model.Permission;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.nio.file.StandardCopyOption;
-import java.util.UUID;
+import java.util.Collections;
 
 @Service
 public class GoogleDriveService {
 
-    private final Path uploadDir;
+    @Value("${app.google-drive.folder-id}")
+    private String folderId;
 
-    public GoogleDriveService(@Value("${app.upload.dir:uploads}") String uploadPath) throws IOException {
-        this.uploadDir = Paths.get(uploadPath).toAbsolutePath();
-        Files.createDirectories(this.uploadDir);
+    private final Drive driveService;
+
+    public GoogleDriveService(Drive driveService) {
+        this.driveService = driveService;
     }
 
     public Product.ProductImage uploadFile(MultipartFile file) throws IOException {
-        String fileId = UUID.randomUUID().toString();
-        String ext = "";
-        String originalName = file.getOriginalFilename();
-        if (originalName != null && originalName.contains(".")) {
-            ext = originalName.substring(originalName.lastIndexOf("."));
-        }
-        String fileName = fileId + ext;
+        File fileMetadata = new File();
+        fileMetadata.setName(file.getOriginalFilename());
+        fileMetadata.setParents(Collections.singletonList(folderId));
 
-        Path target = uploadDir.resolve(fileName);
-        Files.copy(file.getInputStream(), target, StandardCopyOption.REPLACE_EXISTING);
+        java.io.File tempFile = java.io.File.createTempFile("upload-", ".tmp");
+        file.transferTo(tempFile);
 
-        // Build URL served by our backend
-        String imageUrl = "/api/images/" + fileName;
+        FileContent mediaContent = new FileContent(file.getContentType(), tempFile);
+        File driveFile = driveService.files().create(fileMetadata, mediaContent)
+                .setSupportsAllDrives(true)
+                .setFields("id, webViewLink, webContentLink")
+                .execute();
+
+        // Make file public
+        Permission permission = new Permission()
+                .setType("anyone")
+                .setRole("reader");
+        driveService.permissions().create(driveFile.getId(), permission)
+                .setSupportsAllDrives(true)
+                .execute();
+
+        // Standard direct link format for Google Drive images (thumbnail is more reliable for direct display)
+        String imageUrl = String.format("https://drive.google.com/thumbnail?id=%s&sz=w1000", driveFile.getId());
 
         Product.ProductImage productImage = new Product.ProductImage();
-        productImage.setDriveFileId(fileId);
+        productImage.setDriveFileId(driveFile.getId());
         productImage.setUrl(imageUrl);
-        productImage.setName(originalName != null ? originalName : fileName);
+        productImage.setName(file.getOriginalFilename());
         productImage.setPrimary(false);
 
+        tempFile.delete();
         return productImage;
     }
 
     public void deleteFile(String fileId) throws IOException {
-        // Find and delete file with any extension matching this ID
-        try (var stream = Files.list(uploadDir)) {
-            stream.filter(p -> p.getFileName().toString().startsWith(fileId))
-                  .forEach(p -> {
-                      try { Files.deleteIfExists(p); } catch (IOException ignored) {}
-                  });
-        }
+        driveService.files().delete(fileId)
+                .setSupportsAllDrives(true)
+                .execute();
     }
 }

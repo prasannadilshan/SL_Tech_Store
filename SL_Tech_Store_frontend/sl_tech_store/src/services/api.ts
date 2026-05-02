@@ -7,6 +7,14 @@ export const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
 // Helper to resolve image URLs (handles both relative and absolute URLs)
 export const getImageUrl = (url: string | undefined): string => {
   if (!url) return '';
+  
+  // Convert Google Drive links to direct view format using a robust regex
+  const driveMatch = url.match(/(?:id=|\/d\/|drive\.google\.com\/file\/d\/|drive\.google\.com\/uc\?id=)([\w-]+)/);
+  if (driveMatch && driveMatch[1]) {
+    // thumbnail?id=ID&sz=w1000 is the most reliable way to embed Google Drive images
+    return `https://drive.google.com/thumbnail?id=${driveMatch[1]}&sz=w1000`;
+  }
+
   if (url.startsWith('http')) return url;
   return BACKEND_URL + url;
 };

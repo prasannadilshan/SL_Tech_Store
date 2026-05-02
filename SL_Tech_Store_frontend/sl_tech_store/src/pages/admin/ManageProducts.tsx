@@ -30,13 +30,14 @@ export default function ManageProducts() {
   const [saving, setSaving] = useState(false);
   const [imageFiles, setImageFiles] = useState<File[]>([]);
   const [imagePreviews, setImagePreviews] = useState<string[]>([]);
+  const [existingImages, setExistingImages] = useState<any[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const load = () => { setLoading(true); productService.getProducts({ page, size: 10 }).then(r => { setProducts(r.data.data?.content || []); setTotalPages(r.data.data?.totalPages || 0); }).catch(() => {}).finally(() => setLoading(false)); };
   useEffect(load, [page]);
 
-  const openAdd = () => { setForm({ ...emptyForm }); setEditId(null); setImageFiles([]); setImagePreviews([]); setShowForm(true); };
-  const openEdit = (p: Product) => { setForm({ name: p.name, brand: p.brand, model: p.model, description: p.description, price: p.price, discount: p.discount, stock: p.stock, category: p.category, featured: p.featured, active: p.active, specs: p.specs || emptyForm.specs }); setEditId(p.id); setImageFiles([]); setImagePreviews([]); setShowForm(true); };
+  const openAdd = () => { setForm({ ...emptyForm }); setEditId(null); setImageFiles([]); setImagePreviews([]); setExistingImages([]); setShowForm(true); };
+  const openEdit = (p: Product) => { setForm({ name: p.name, brand: p.brand, model: p.model, description: p.description, price: p.price, discount: p.discount, stock: p.stock, category: p.category, featured: p.featured, active: p.active, specs: p.specs || emptyForm.specs }); setEditId(p.id); setImageFiles([]); setImagePreviews([]); setExistingImages(p.images || []); setShowForm(true); };
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
@@ -72,7 +73,8 @@ export default function ManageProducts() {
       if (imageFiles.length > 0 && productId) {
         toast.loading('Uploading images to Google Drive...', { id: 'img-upload' });
         for (let i = 0; i < imageFiles.length; i++) {
-          await productService.uploadImage(productId, imageFiles[i], i === 0);
+          const isPrimary = i === 0 && existingImages.length === 0;
+          await productService.uploadImage(productId, imageFiles[i], isPrimary);
         }
         toast.success(`${imageFiles.length} image(s) uploaded!`, { id: 'img-upload' });
       }
@@ -91,6 +93,16 @@ export default function ManageProducts() {
     const file = e.target.files?.[0];
     if (!file) return;
     try { await productService.uploadImage(productId, file, true); toast.success('Image uploaded!'); load(); } catch { toast.error('Upload failed'); }
+  };
+
+  const handleDeleteExistingImage = async (driveFileId: string) => {
+    if (!editId || !confirm('Delete this image from Google Drive?')) return;
+    try {
+      await productService.deleteImage(editId, driveFileId);
+      setExistingImages(prev => prev.filter(img => img.driveFileId !== driveFileId));
+      toast.success('Image deleted');
+      load();
+    } catch { toast.error('Failed to delete image'); }
   };
 
   return (
@@ -196,6 +208,22 @@ export default function ManageProducts() {
                 <div className="form-group"><label>Description</label><textarea className="input" rows={3} value={form.description} onChange={e => setForm({...form, description: e.target.value})} /></div>
 
                 <h3 style={{ fontSize: 16, fontWeight: 700, margin: '20px 0 12px', color: 'var(--primary-700)' }}><FiImage style={{ marginRight: 6 }} /> Product Images</h3>
+                {existingImages.length > 0 && (
+                  <div style={{ marginBottom: 20 }}>
+                    <label style={{ display: 'block', marginBottom: 8, fontSize: 13, color: 'var(--gray-500)' }}>Current Images</label>
+                    <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+                      {existingImages.map((img, i) => (
+                        <div key={img.driveFileId} style={{ position: 'relative', width: 90, height: 90, borderRadius: 10, overflow: 'hidden', border: img.isPrimary ? '3px solid var(--primary-500)' : '2px solid var(--gray-200)' }}>
+                          <img src={getImageUrl(img.url)} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                          <button type="button" onClick={() => handleDeleteExistingImage(img.driveFileId)} style={{ position: 'absolute', top: 2, right: 2, width: 22, height: 22, borderRadius: '50%', background: 'var(--danger)', color: 'white', border: 'none', fontSize: 12, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><FiTrash2 /></button>
+                          {img.isPrimary && <span style={{ position: 'absolute', bottom: 0, left: 0, right: 0, background: 'var(--primary-600)', color: 'white', fontSize: 9, textAlign: 'center', padding: '2px 0', fontWeight: 700 }}>PRIMARY</span>}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                <label style={{ display: 'block', marginBottom: 8, fontSize: 13, color: 'var(--gray-500)' }}>Add New Images</label>
                 <div style={{ border: '2px dashed var(--gray-300)', borderRadius: 12, padding: 24, textAlign: 'center', cursor: 'pointer', background: 'var(--gray-50)', transition: 'all 0.2s', marginBottom: 16 }}
                   onClick={() => fileInputRef.current?.click()}
                   onDragOver={e => { e.preventDefault(); e.currentTarget.style.borderColor = 'var(--primary-400)'; e.currentTarget.style.background = 'var(--primary-50)'; }}
@@ -210,10 +238,10 @@ export default function ManageProducts() {
                 {imagePreviews.length > 0 && (
                   <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginBottom: 16 }}>
                     {imagePreviews.map((src, i) => (
-                      <div key={i} style={{ position: 'relative', width: 90, height: 90, borderRadius: 10, overflow: 'hidden', border: i === 0 ? '3px solid var(--primary-500)' : '2px solid var(--gray-200)' }}>
+                      <div key={i} style={{ position: 'relative', width: 90, height: 90, borderRadius: 10, overflow: 'hidden', border: (existingImages.length === 0 && i === 0) ? '3px solid var(--primary-500)' : '2px solid var(--gray-200)' }}>
                         <img src={src} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                         <button type="button" onClick={() => removePreview(i)} style={{ position: 'absolute', top: 2, right: 2, width: 22, height: 22, borderRadius: '50%', background: 'var(--danger)', color: 'white', border: 'none', fontSize: 12, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><FiX /></button>
-                        {i === 0 && <span style={{ position: 'absolute', bottom: 0, left: 0, right: 0, background: 'var(--primary-600)', color: 'white', fontSize: 9, textAlign: 'center', padding: '2px 0', fontWeight: 700 }}>PRIMARY</span>}
+                        {(existingImages.length === 0 && i === 0) && <span style={{ position: 'absolute', bottom: 0, left: 0, right: 0, background: 'var(--primary-600)', color: 'white', fontSize: 9, textAlign: 'center', padding: '2px 0', fontWeight: 700 }}>NEW PRIMARY</span>}
                       </div>
                     ))}
                   </div>
