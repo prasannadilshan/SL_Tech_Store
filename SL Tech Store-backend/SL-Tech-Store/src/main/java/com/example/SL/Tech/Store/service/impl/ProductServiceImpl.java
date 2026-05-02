@@ -80,6 +80,8 @@ public class ProductServiceImpl {
     }
 
     public long getProductCount() { return productRepository.countByActiveTrue(); }
+    public long getOutOfStockCount() { return productRepository.countByActiveTrueAndStock(0); }
+    public long getLowStockCount() { return productRepository.countByActiveTrueAndStockLessThan(5); }
 
     private void mapRequestToProduct(ProductRequest request, Product product) {
         product.setName(request.getName());

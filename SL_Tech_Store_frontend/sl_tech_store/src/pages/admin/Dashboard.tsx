@@ -24,7 +24,10 @@ export default function Dashboard() {
   if (loading) return <div className="spinner" />;
 
   const cards = [
+    { label: 'Total Revenue', value: `Rs. ${(stats.totalRevenue || 0).toLocaleString()}`, icon: <FiTrendingUp />, color: '#059669', bg: '#ecfdf5', link: '/admin/orders', fullWidth: true },
     { label: 'Total Products', value: stats.totalProducts || 0, icon: <FiBox />, color: '#3b82f6', bg: '#eff6ff', link: '/admin/products' },
+    { label: 'Out of Stock', value: stats.outOfStock || 0, icon: <FiPackage />, color: '#ef4444', bg: '#fef2f2', link: '/admin/products' },
+    { label: 'Low Stock', value: stats.lowStock || 0, icon: <FiClock />, color: '#f59e0b', bg: '#fffbeb', link: '/admin/products' },
     { label: 'Total Orders', value: stats.totalOrders || 0, icon: <FiShoppingBag />, color: '#10b981', bg: '#d1fae5', link: '/admin/orders' },
     { label: 'Pending Orders', value: stats.pendingOrders || 0, icon: <FiClock />, color: '#f59e0b', bg: '#fef3c7', link: '/admin/orders' },
     { label: 'Total Users', value: stats.totalUsers || 0, icon: <FiUsers />, color: '#8b5cf6', bg: '#ede9fe', link: '/admin/users' },
@@ -54,10 +57,10 @@ export default function Dashboard() {
 
         <div className="stats-grid">
           {cards.map(c => (
-            <Link to={c.link} key={c.label} className="stat-card">
+            <Link to={c.link} key={c.label} className="stat-card" style={c.fullWidth ? { gridColumn: 'span 2' } : {}}>
               <div className="stat-icon" style={{ background: c.bg, color: c.color }}>{c.icon}</div>
               <div>
-                <div className="stat-value">{c.value}</div>
+                <div className="stat-value" style={c.fullWidth ? { fontSize: 32 } : {}}>{c.value}</div>
                 <div className="stat-label">{c.label}</div>
               </div>
             </Link>

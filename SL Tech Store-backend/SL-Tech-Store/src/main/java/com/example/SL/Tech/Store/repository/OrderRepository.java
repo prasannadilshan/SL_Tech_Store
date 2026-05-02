@@ -14,4 +14,10 @@ public interface OrderRepository extends MongoRepository<Order, String> {
     Optional<Order> findByStripeSessionId(String sessionId);
     long countByStatus(Order.OrderStatus status);
     boolean existsByUserIdAndItems_ProductIdAndStatus(String userId, String productId, Order.OrderStatus status);
+
+    @org.springframework.data.mongodb.repository.Aggregation(pipeline = {
+        "{ $match: { 'status': { $ne: 'CANCELLED' } } }",
+        "{ $group: { _id: null, total: { $sum: '$totalAmount' } } }"
+    })
+    Double sumTotalAmount();
 }

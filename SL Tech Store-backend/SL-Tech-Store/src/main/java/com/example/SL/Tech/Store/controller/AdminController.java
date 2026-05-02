@@ -28,8 +28,11 @@ public class AdminController {
     public ResponseEntity<ApiResponse<Map<String, Object>>> getDashboard() {
         Map<String, Object> stats = new HashMap<>();
         stats.put("totalProducts", productService.getProductCount());
+        stats.put("outOfStock", productService.getOutOfStockCount());
+        stats.put("lowStock", productService.getLowStockCount());
         stats.put("totalOrders", orderService.getOrderCount());
         stats.put("pendingOrders", orderService.getPendingOrderCount());
+        stats.put("totalRevenue", orderService.getTotalRevenue());
         stats.put("totalUsers", userService.getAllUsers().size());
         return ResponseEntity.ok(ApiResponse.success(stats));
     }

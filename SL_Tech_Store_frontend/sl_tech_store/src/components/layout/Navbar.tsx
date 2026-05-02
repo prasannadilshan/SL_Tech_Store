@@ -39,13 +39,19 @@ export default function Navbar() {
           <FiSearch className="search-icon" />
           <input type="text" placeholder="Search laptops..." value={search}
             onChange={(e) => setSearch(e.target.value)} />
-          <button type="button" className="search-close d-md-none" onClick={() => setSearchOpen(false)}><FiX /></button>
+          <button type="button" className="search-close" onClick={() => setSearchOpen(false)}><FiX /></button>
         </form>
 
+        {/* Backdrop overlay for mobile sidebar */}
+        <div
+          className={`nav-backdrop ${menuOpen ? 'visible' : ''}`}
+          onClick={() => setMenuOpen(false)}
+        />
+
         <div className={`nav-links ${menuOpen ? 'open' : ''}`}>
-          <div className="mobile-nav-header d-md-none">
-             <img src={logoImg} alt="Logo" className="logo-img" style={{ height: 32 }} />
-             <button className="nav-close" onClick={() => setMenuOpen(false)}><FiX /></button>
+          <div className="mobile-nav-header">
+            <img src={logoImg} alt="Logo" className="logo-img" style={{ height: 32 }} />
+            <button className="nav-close" onClick={() => setMenuOpen(false)}><FiX /></button>
           </div>
           <Link to="/products" onClick={() => setMenuOpen(false)}>Products</Link>
           {isAuthenticated ? (

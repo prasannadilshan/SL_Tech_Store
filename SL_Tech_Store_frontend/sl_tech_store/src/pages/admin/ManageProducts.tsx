@@ -7,7 +7,17 @@ import type { Product } from '../../types';
 import toast from 'react-hot-toast';
 import './Admin.css';
 
-const emptyForm = { name: '', brand: '', model: '', description: '', price: 0, discount: 0, stock: 0, category: 'Gaming', featured: false, active: true, specs: { processor: '', ram: '', storage: '', gpu: '', display: '', battery: '', os: '', weight: '', color: '', ports: '', wireless: '', keyboard: '', webcam: '', warranty: '' } };
+const BRANDS = ['ASUS', 'HP', 'Dell', 'Lenovo', 'Apple', 'MSI', 'Acer', 'Gigabyte', 'Razer'];
+const CATEGORIES = ['Gaming', 'Business', 'Ultrabook', 'Budget', 'Workstation', 'Student', 'Professional'];
+const PROCESSORS = ['Intel Core i9', 'Intel Core i7', 'Intel Core i5', 'Intel Core i3', 'AMD Ryzen 9', 'AMD Ryzen 7', 'AMD Ryzen 5', 'Apple M3', 'Apple M2', 'Apple M1'];
+const GPUS = ['NVIDIA GeForce RTX 4090', 'NVIDIA GeForce RTX 4080', 'NVIDIA GeForce RTX 4070', 'NVIDIA GeForce RTX 4060', 'NVIDIA GeForce RTX 4050', 'NVIDIA GeForce RTX 3050', 'AMD Radeon RX 7000', 'Intel Iris Xe', 'Apple M3 GPU'];
+const RAM_OPTIONS = ['4GB', '8GB', '16GB', '32GB', '64GB'];
+const STORAGE_OPTIONS = ['128GB SSD', '256GB SSD', '512GB SSD', '1TB SSD', '2TB SSD'];
+const DDR_VERSIONS = ['DDR4', 'DDR5', 'LPDDR5', 'LPDDR5X', 'LPDDR4X'];
+const BATTERY_OPTIONS = ['3-cell 41Wh', '4-cell 54Wh', '6-cell 70Wh', '80Wh', '90Wh', '99Wh'];
+const WARRANTY_OPTIONS = ['1 Year Local', '2 Years Local', '3 Years Local', '1 Year International', 'No Warranty'];
+
+const emptyForm = { name: '', brand: '', model: '', description: '', price: 0, discount: 0, stock: 0, category: 'Gaming', featured: false, active: true, specs: { processor: '', ram: '', ddrVersion: '', storage: '', gpu: '', display: '', battery: '', os: '', weight: '', color: '', ports: '', wireless: '', keyboard: '', webcam: '', warranty: '' } };
 
 export default function ManageProducts() {
   const [products, setProducts] = useState<Product[]>([]);
@@ -163,14 +173,16 @@ export default function ManageProducts() {
               <form onSubmit={handleSave}>
                 <div className="form-row">
                   <div className="form-group"><label>Product Name *</label><input className="input" value={form.name} onChange={e => setForm({...form, name: e.target.value})} required /></div>
-                  <div className="form-group"><label>Brand *</label><input className="input" value={form.brand} onChange={e => setForm({...form, brand: e.target.value})} required /></div>
+                  <div className="form-group"><label>Brand *</label>
+                    <input className="input" list="brand-list" value={form.brand} onChange={e => setForm({...form, brand: e.target.value})} required />
+                    <datalist id="brand-list">{BRANDS.map(b => <option key={b} value={b} />)}</datalist>
+                  </div>
                 </div>
                 <div className="form-row-3">
                   <div className="form-group"><label>Model</label><input className="input" value={form.model} onChange={e => setForm({...form, model: e.target.value})} /></div>
                   <div className="form-group"><label>Category *</label>
-                    <select className="input" value={form.category} onChange={e => setForm({...form, category: e.target.value})}>
-                      {['Gaming','Business','Ultrabook','Budget','Workstation'].map(c => <option key={c}>{c}</option>)}
-                    </select>
+                    <input className="input" list="category-list" value={form.category} onChange={e => setForm({...form, category: e.target.value})} required />
+                    <datalist id="category-list">{CATEGORIES.map(c => <option key={c} value={c} />)}</datalist>
                   </div>
                   <div className="form-group"><label>Price (Rs.) *</label><input className="input" type="number" value={form.price} onChange={e => setForm({...form, price: +e.target.value})} required /></div>
                 </div>
@@ -209,7 +221,21 @@ export default function ManageProducts() {
 
                 <h3 style={{ fontSize: 16, fontWeight: 700, margin: '20px 0 12px', color: 'var(--primary-700)' }}>Specifications</h3>
                 <div className="form-row">
-                  {['processor','ram','storage','gpu','display','battery','os','weight','warranty'].map(k => (
+                  <div className="form-group"><label>Processor</label><input className="input" list="cpu-list" value={form.specs.processor} onChange={e => setForm({...form, specs: {...form.specs, processor: e.target.value}})} /><datalist id="cpu-list">{PROCESSORS.map(x => <option key={x} value={x} />)}</datalist></div>
+                  <div className="form-group"><label>GPU</label><input className="input" list="gpu-list" value={form.specs.gpu} onChange={e => setForm({...form, specs: {...form.specs, gpu: e.target.value}})} /><datalist id="gpu-list">{GPUS.map(x => <option key={x} value={x} />)}</datalist></div>
+                </div>
+                <div className="form-row-3">
+                  <div className="form-group"><label>RAM</label><input className="input" list="ram-list" value={form.specs.ram} onChange={e => setForm({...form, specs: {...form.specs, ram: e.target.value}})} /><datalist id="ram-list">{RAM_OPTIONS.map(x => <option key={x} value={x} />)}</datalist></div>
+                  <div className="form-group"><label>DDR Version</label><input className="input" list="ddr-list" value={form.specs.ddrVersion} onChange={e => setForm({...form, specs: {...form.specs, ddrVersion: e.target.value}})} /><datalist id="ddr-list">{DDR_VERSIONS.map(x => <option key={x} value={x} />)}</datalist></div>
+                  <div className="form-group"><label>Storage</label><input className="input" list="storage-list" value={form.specs.storage} onChange={e => setForm({...form, specs: {...form.specs, storage: e.target.value}})} /><datalist id="storage-list">{STORAGE_OPTIONS.map(x => <option key={x} value={x} />)}</datalist></div>
+                </div>
+                <div className="form-row-3">
+                  <div className="form-group"><label>Display</label><input className="input" value={form.specs.display} onChange={e => setForm({...form, specs: {...form.specs, display: e.target.value}})} /></div>
+                  <div className="form-group"><label>Battery</label><input className="input" list="battery-list" value={form.specs.battery} onChange={e => setForm({...form, specs: {...form.specs, battery: e.target.value}})} /><datalist id="battery-list">{BATTERY_OPTIONS.map(x => <option key={x} value={x} />)}</datalist></div>
+                  <div className="form-group"><label>Warranty</label><input className="input" list="warranty-list" value={form.specs.warranty} onChange={e => setForm({...form, specs: {...form.specs, warranty: e.target.value}})} /><datalist id="warranty-list">{WARRANTY_OPTIONS.map(x => <option key={x} value={x} />)}</datalist></div>
+                </div>
+                <div className="form-row-3">
+                  {['os','weight','color'].map(k => (
                     <div className="form-group" key={k}><label style={{ textTransform: 'capitalize' }}>{k}</label><input className="input" value={form.specs?.[k] || ''} onChange={e => setForm({...form, specs: {...form.specs, [k]: e.target.value}})} /></div>
                   ))}
                 </div>

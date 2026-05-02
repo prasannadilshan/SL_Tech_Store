@@ -29,6 +29,8 @@ public interface ProductRepository extends MongoRepository<Product, String> {
     Page<Product> findByActiveTrueAndBrandIn(List<String> brands, Pageable pageable);
 
     long countByActiveTrue();
+    long countByActiveTrueAndStock(int stock);
+    long countByActiveTrueAndStockLessThan(int stock);
 
     List<Product> findTop8ByActiveTrueOrderByCreatedAtDesc();
 

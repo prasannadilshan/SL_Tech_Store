@@ -54,9 +54,9 @@ export default function ProductDetail() {
     <div className="container section">
       <div className="responsive-grid-2" style={{ alignItems: 'start' }}>
         <div>
-          <div style={{ background: 'var(--gray-50)', borderRadius: 16, padding: 20, marginBottom: 12 }}>
-            {imgs.length > 0 ? <img src={getImageUrl(imgs[selectedImg]?.url)} alt={product.name} style={{ width: '100%', borderRadius: 12 }} />
-              : <div style={{ fontSize: 120, textAlign: 'center', padding: 40 }}>💻</div>}
+          <div style={{ background: 'white', borderRadius: 16, padding: 24, marginBottom: 12, display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: 400, border: '1px solid var(--gray-100)' }}>
+            {imgs.length > 0 ? <img src={getImageUrl(imgs[selectedImg]?.url)} alt={product.name} style={{ maxWidth: '100%', maxHeight: 450, objectFit: 'contain', borderRadius: 8 }} />
+              : <div style={{ fontSize: 120, textAlign: 'center', padding: 40, opacity: 0.2 }}>💻</div>}
           </div>
           {imgs.length > 1 && (
             <div style={{ display: 'flex', gap: 8 }}>

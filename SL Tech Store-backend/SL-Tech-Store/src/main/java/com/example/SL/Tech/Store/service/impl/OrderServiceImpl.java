@@ -120,4 +120,8 @@ public class OrderServiceImpl {
 
     public long getOrderCount() { return orderRepository.count(); }
     public long getPendingOrderCount() { return orderRepository.countByStatus(Order.OrderStatus.PENDING); }
+    public double getTotalRevenue() {
+        Double revenue = orderRepository.sumTotalAmount();
+        return revenue != null ? revenue : 0.0;
+    }
 }

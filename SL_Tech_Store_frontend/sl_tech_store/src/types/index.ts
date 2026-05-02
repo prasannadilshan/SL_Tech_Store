@@ -33,6 +33,7 @@ export interface Address {
 export interface ProductSpecs {
   processor: string;
   ram: string;
+  ddrVersion?: string;
   storage: string;
   gpu: string;
   display: string;
