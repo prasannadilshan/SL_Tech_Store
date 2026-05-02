@@ -10,6 +10,8 @@ export const orderService = {
     api.get<ApiResponse<Order>>(`/orders/${id}`),
   getAllOrders: (page = 0, size = 10, status?: string) =>
     api.get<ApiResponse<PagedResponse<Order>>>(`/orders/admin/all`, { params: { page, size, status } }),
+  getUserOrdersForAdmin: (userId: string, page = 0, size = 10) =>
+    api.get<ApiResponse<PagedResponse<Order>>>(`/orders/admin/user/${userId}`, { params: { page, size } }),
   updateStatus: (id: string, status: string) =>
     api.put<ApiResponse<Order>>(`/orders/${id}/status?status=${status}`),
   updateTracking: (id: string, trackingNumber: string) =>

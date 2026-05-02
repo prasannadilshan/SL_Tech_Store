@@ -49,10 +49,15 @@ public class EmailService {
                 """.formatted(customerName, orderId, totalAmount);
 
             helper.setText(htmlContent, true);
-            mailSender.send(message);
+            new Thread(() -> {
+                try {
+                    mailSender.send(message);
+                } catch (Exception e) {
+                    System.err.println("Failed to send order confirmation email: " + e.getMessage());
+                }
+            }).start();
         } catch (MessagingException e) {
-            // Log but don't throw — email failure shouldn't block order
-            System.err.println("Failed to send order confirmation email: " + e.getMessage());
+            System.err.println("Failed to build order confirmation email: " + e.getMessage());
         }
     }
 
@@ -78,9 +83,15 @@ public class EmailService {
                 """.formatted(customerName, orderId, status);
 
             helper.setText(htmlContent, true);
-            mailSender.send(message);
+            new Thread(() -> {
+                try {
+                    mailSender.send(message);
+                } catch (Exception e) {
+                    System.err.println("Failed to send order status email: " + e.getMessage());
+                }
+            }).start();
         } catch (MessagingException e) {
-            System.err.println("Failed to send order status email: " + e.getMessage());
+            System.err.println("Failed to build order status email: " + e.getMessage());
         }
     }
 }

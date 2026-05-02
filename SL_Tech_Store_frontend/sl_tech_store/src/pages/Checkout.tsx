@@ -1,51 +1,97 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useCartStore } from '../store/cartStore';
 import { orderService } from '../services/orderService';
+import api from '../services/api';
 import toast from 'react-hot-toast';
+import { loadStripe } from '@stripe/stripe-js';
+import { Elements, PaymentElement, useStripe, useElements } from '@stripe/react-stripe-js';
 
-export default function Checkout() {
+const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLIC_KEY || '');
+
+function CheckoutContent() {
   const { cart } = useCartStore();
   const navigate = useNavigate();
+  const stripe = useStripe();
+  const elements = useElements();
+  
   const [delivery, setDelivery] = useState<'EXPRESS' | 'STORE_PICKUP'>('EXPRESS');
+  const [paymentMethod, setPaymentMethod] = useState<'CARD' | 'COD'>('CARD');
   const [address, setAddress] = useState({ fullName: '', phone: '', street: '', city: '', state: '', postalCode: '', country: 'Sri Lanka', isDefault: true, id: '' });
   const [loading, setLoading] = useState(false);
 
-  if (!cart || cart.items.length === 0) { navigate('/cart'); return null; }
-
   const deliveryFee = delivery === 'EXPRESS' ? 500 : 0;
-  const subtotal = cart.items.reduce((s, i) => s + i.price * i.quantity, 0);
+  const subtotal = cart?.items.reduce((s, i) => s + i.price * i.quantity, 0) || 0;
+
+  if (!cart || cart.items.length === 0) { navigate('/cart'); return null; }
 
   const handleOrder = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!address.fullName || !address.phone || !address.street || !address.city || !address.state || !address.postalCode) {
+      toast.error('Please fill out all shipping address fields');
+      return;
+    }
+
+    if (!stripe || !elements) return;
+    
     setLoading(true);
+
     try {
+      let paymentIntentId = undefined;
+
+      if (paymentMethod === 'CARD') {
+        const { error: submitError } = await elements.submit();
+        if (submitError) {
+          toast.error(submitError.message || 'Validation failed');
+          setLoading(false);
+          return;
+        }
+
+        const { error, paymentIntent } = await stripe.confirmPayment({
+          elements,
+          redirect: 'if_required',
+        });
+
+        if (error) {
+          toast.error(error.message || 'Payment failed');
+          setLoading(false);
+          return;
+        }
+        paymentIntentId = paymentIntent?.id;
+      }
+
       const data = {
         items: cart.items.map(i => ({ productId: i.productId, quantity: i.quantity })),
         shippingAddress: address,
         deliveryOption: delivery,
+        stripePaymentIntentId: paymentIntentId,
       };
+      
       const res = await orderService.createOrder(data);
       toast.success('Order placed successfully!');
       navigate(`/orders/${res.data.data.id}`);
-    } catch (err: any) { toast.error(err.response?.data?.message || 'Order failed'); }
+    } catch (err: any) { 
+      toast.error(err.response?.data?.message || 'Order failed'); 
+    }
     setLoading(false);
   };
 
   return (
     <div className="container section">
       <h1 style={{ fontSize: 28, fontWeight: 800, marginBottom: 24 }}>Checkout</h1>
-      <form onSubmit={handleOrder} style={{ display: 'grid', gridTemplateColumns: '1fr 380px', gap: 24, alignItems: 'start' }}>
+      <form onSubmit={handleOrder} style={{ display: 'grid', gridTemplateColumns: '1fr 400px', gap: 24, alignItems: 'start' }}>
         <div>
           <div className="card" style={{ padding: 24, marginBottom: 16 }}>
             <h3 style={{ marginBottom: 16 }}>Shipping Address</h3>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
               {[['fullName','Full Name'],['phone','Phone'],['street','Street Address'],['city','City'],['state','State/Province'],['postalCode','Postal Code']].map(([k,l]) => (
-                <input key={k} className="input" placeholder={l} value={(address as any)[k]} onChange={e => setAddress({...address, [k]: e.target.value})} required style={k === 'street' ? { gridColumn: '1/-1' } : {}} />
+                <input key={k} className="input" placeholder={l} value={(address as any)[k]} onChange={e => setAddress({...address, [k]: e.target.value})} style={k === 'street' ? { gridColumn: '1/-1' } : {}} />
               ))}
             </div>
           </div>
-          <div className="card" style={{ padding: 24 }}>
+          
+          <div className="card" style={{ padding: 24, marginBottom: 16 }}>
             <h3 style={{ marginBottom: 16 }}>Delivery Option</h3>
             {[{ value: 'EXPRESS' as const, label: 'Express Delivery', desc: '1-2 business days', fee: 500 }, { value: 'STORE_PICKUP' as const, label: 'Store Pickup', desc: 'Same day', fee: 0 }].map(opt => (
               <label key={opt.value} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: 16, border: `2px solid ${delivery === opt.value ? 'var(--primary-500)' : 'var(--gray-200)'}`, borderRadius: 12, marginBottom: 8, cursor: 'pointer', background: delivery === opt.value ? 'var(--primary-50)' : 'white' }}>
@@ -55,12 +101,32 @@ export default function Checkout() {
               </label>
             ))}
           </div>
+
+          <div className="card" style={{ padding: 24 }}>
+            <h3 style={{ marginBottom: 16 }}>Payment Method</h3>
+            <div style={{ display: 'flex', gap: 12, marginBottom: 20 }}>
+              <button type="button" className={`btn ${paymentMethod === 'CARD' ? 'btn-primary' : 'btn-outline'}`} style={{ flex: 1 }} onClick={() => setPaymentMethod('CARD')}>Credit / Debit Card</button>
+              <button type="button" className={`btn ${paymentMethod === 'COD' ? 'btn-primary' : 'btn-outline'}`} style={{ flex: 1 }} onClick={() => setPaymentMethod('COD')}>Cash on Delivery</button>
+            </div>
+            
+            {paymentMethod === 'CARD' && (
+              <div style={{ padding: 16, background: 'var(--gray-50)', borderRadius: 12, border: '1px solid var(--gray-200)' }}>
+                <PaymentElement />
+              </div>
+            )}
+            {paymentMethod === 'COD' && (
+              <div style={{ padding: 24, textAlign: 'center', color: 'var(--gray-500)', background: 'var(--gray-50)', borderRadius: 12 }}>
+                You will pay when the order is delivered to your address.
+              </div>
+            )}
+          </div>
         </div>
         <div className="card" style={{ padding: 24, position: 'sticky', top: 100 }}>
           <h3 style={{ marginBottom: 16 }}>Order Summary</h3>
           {cart.items.map(i => (
             <div key={i.productId} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 14, marginBottom: 8 }}>
-              <span>{i.productName} x{i.quantity}</span><span>Rs. {(i.price * i.quantity).toLocaleString()}</span>
+              <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: 200 }}>{i.productName} x{i.quantity}</span>
+              <span>Rs. {(i.price * i.quantity).toLocaleString()}</span>
             </div>
           ))}
           <hr style={{ border: 'none', borderTop: '1px solid var(--gray-200)', margin: '12px 0' }} />
@@ -68,11 +134,57 @@ export default function Checkout() {
           <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}><span>Delivery</span><span>Rs. {deliveryFee.toLocaleString()}</span></div>
           <hr style={{ border: 'none', borderTop: '1px solid var(--gray-200)', margin: '12px 0' }} />
           <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 800, fontSize: 20 }}><span>Total</span><span>Rs. {(subtotal + deliveryFee).toLocaleString()}</span></div>
-          <button type="submit" className="btn btn-primary btn-lg" disabled={loading} style={{ width: '100%', justifyContent: 'center', marginTop: 20 }}>
-            {loading ? 'Placing Order...' : 'Place Order'}
+          <button type="submit" className="btn btn-primary btn-lg" disabled={loading || !stripe} style={{ width: '100%', justifyContent: 'center', marginTop: 20 }}>
+            {loading ? 'Processing...' : `Pay Rs. ${(subtotal + deliveryFee).toLocaleString()}`}
           </button>
         </div>
       </form>
     </div>
+  );
+}
+
+export default function Checkout() {
+  const { cart } = useCartStore();
+  const [clientSecret, setClientSecret] = useState('');
+  const [loadingKey, setLoadingKey] = useState(true);
+  const amountRef = useRef(0);
+
+  // We need to calculate amount outside to fetch intent
+  // A small hack for now is fetching intent directly
+  useEffect(() => {
+    if (!cart) return;
+    const subtotal = cart.items.reduce((s, i) => s + i.price * i.quantity, 0);
+    const amount = subtotal + 500; // Assuming max delivery fee to authorize
+    
+    // Prevent double-initialization in React StrictMode or unnecessary re-fetches
+    if (amount > 0 && amount !== amountRef.current) {
+      amountRef.current = amount;
+      api.post('/payment/create-intent', { amount }).then(res => {
+        setClientSecret(res.data.data.clientSecret);
+        setLoadingKey(false);
+      }).catch(() => {
+        toast.error('Failed to initialize payment gateway');
+        setLoadingKey(false);
+      });
+    }
+  }, [cart]);
+
+  if (!cart) return null;
+  if (loadingKey) return <div className="spinner" style={{ minHeight: '60vh' }} />;
+
+  if (!clientSecret) {
+    return (
+      <div className="container section" style={{ textAlign: 'center', padding: '100px 20px' }}>
+         <h2 style={{ marginBottom: 16 }}>Payment Gateway Error</h2>
+         <p style={{ color: 'var(--gray-600)' }}>We could not initialize the payment gateway. Please ensure the backend server is running and has been restarted after the recent updates.</p>
+         <button className="btn btn-primary" onClick={() => window.location.reload()} style={{ marginTop: 24 }}>Retry Checkout</button>
+      </div>
+    );
+  }
+
+  return (
+    <Elements stripe={stripePromise} options={{ clientSecret, appearance: { theme: 'stripe' } }}>
+      <CheckoutContent />
+    </Elements>
   );
 }

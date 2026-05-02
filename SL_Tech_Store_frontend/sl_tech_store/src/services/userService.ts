@@ -1,5 +1,5 @@
 import api from './api';
-import type { ApiResponse, User } from '../types';
+import type { ApiResponse, User, Product } from '../types';
 
 export const userService = {
   getProfile: () => api.get<ApiResponse<User>>('/users/profile'),
@@ -15,6 +15,8 @@ export const userService = {
     api.post<ApiResponse<User>>('/users/payment-methods', method),
   removePaymentMethod: (id: string) =>
     api.delete<ApiResponse<User>>(`/users/payment-methods/${id}`),
+  getWishlist: () =>
+    api.get<ApiResponse<Product[]>>('/users/wishlist'),
   addToWishlist: (productId: string) =>
     api.post<ApiResponse<User>>(`/users/wishlist/${productId}`),
   removeFromWishlist: (productId: string) =>

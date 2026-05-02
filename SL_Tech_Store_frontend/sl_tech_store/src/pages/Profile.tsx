@@ -1,12 +1,15 @@
 import { useEffect, useState } from 'react';
 import { userService } from '../services/userService';
-import type { User, Address, SavedPaymentMethod } from '../types';
+import type { User, Address, SavedPaymentMethod, Product } from '../types';
+import { getImageUrl } from '../services/api';
+import { Link } from 'react-router-dom';
 import toast from 'react-hot-toast';
 
 export default function Profile() {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'details' | 'addresses' | 'payments'>('details');
+  const [activeTab, setActiveTab] = useState<'details' | 'addresses' | 'payments' | 'wishlist'>('details');
+  const [wishlistProducts, setWishlistProducts] = useState<Product[]>([]);
 
   // Details state
   const [isEditingDetails, setIsEditingDetails] = useState(false);
@@ -39,6 +42,22 @@ export default function Profile() {
   };
 
   useEffect(() => { loadProfile(); }, []);
+
+  useEffect(() => {
+    if (activeTab === 'wishlist') {
+      userService.getWishlist().then(res => setWishlistProducts(res.data.data || [])).catch(() => {});
+    }
+  }, [activeTab]);
+
+  const handleRemoveFromWishlist = async (productId: string) => {
+    try {
+      await userService.removeFromWishlist(productId);
+      setWishlistProducts(prev => prev.filter(p => p.id !== productId));
+      toast.success('Removed from wishlist');
+    } catch {
+      toast.error('Failed to remove');
+    }
+  };
 
   const handleUpdateDetails = async () => {
     try {
@@ -153,6 +172,13 @@ export default function Profile() {
               style={{ justifyContent: 'flex-start' }}
             >
               Payment Methods ({(user.paymentMethods || []).length})
+            </button>
+            <button 
+              className={`btn ${activeTab === 'wishlist' ? 'btn-primary' : 'btn-outline'}`}
+              onClick={() => setActiveTab('wishlist')}
+              style={{ justifyContent: 'flex-start' }}
+            >
+              Wishlist ({(user.wishlist || []).length})
             </button>
           </div>
         </div>
@@ -270,6 +296,35 @@ export default function Profile() {
                         </div>
                       </div>
                       <button className="btn btn-danger" style={{ padding: '6px 12px', fontSize: 14 }} onClick={() => handleRemovePaymentMethod(method.id)}>Remove</button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          {activeTab === 'wishlist' && (
+            <div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
+                <h2>My Wishlist</h2>
+              </div>
+              {wishlistProducts.length === 0 ? (
+                <div className="empty-state" style={{ padding: 40 }}>Your wishlist is empty.</div>
+              ) : (
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 16 }}>
+                  {wishlistProducts.map(product => (
+                    <div key={product.id} className="card" style={{ display: 'flex', flexDirection: 'column' }}>
+                      <div style={{ padding: 16, background: 'var(--gray-50)', textAlign: 'center', borderRadius: '12px 12px 0 0' }}>
+                        {product.images?.[0] ? <img src={getImageUrl(product.images[0].url)} alt="" style={{ height: 120, objectFit: 'contain' }} /> : <div style={{ fontSize: 60 }}>💻</div>}
+                      </div>
+                      <div style={{ padding: 16, flex: 1, display: 'flex', flexDirection: 'column' }}>
+                        <h4 style={{ margin: '0 0 8px', fontSize: 14 }}>{product.name}</h4>
+                        <div style={{ fontWeight: 700, color: 'var(--primary-600)', marginBottom: 12 }}>Rs. {product.price.toLocaleString()}</div>
+                        <div style={{ marginTop: 'auto', display: 'flex', gap: 8 }}>
+                          <Link to={`/products/${product.id}`} className="btn btn-primary btn-sm" style={{ flex: 1, justifyContent: 'center' }}>View</Link>
+                          <button className="btn btn-danger btn-sm" onClick={() => handleRemoveFromWishlist(product.id)}>Remove</button>
+                        </div>
+                      </div>
                     </div>
                   ))}
                 </div>

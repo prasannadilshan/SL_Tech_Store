@@ -13,4 +13,5 @@ public interface OrderRepository extends MongoRepository<Order, String> {
     Page<Order> findByStatus(Order.OrderStatus status, Pageable pageable);
     Optional<Order> findByStripeSessionId(String sessionId);
     long countByStatus(Order.OrderStatus status);
+    boolean existsByUserIdAndItems_ProductIdAndStatus(String userId, String productId, Order.OrderStatus status);
 }

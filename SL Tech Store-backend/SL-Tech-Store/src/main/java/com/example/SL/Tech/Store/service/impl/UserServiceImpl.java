@@ -4,7 +4,9 @@ import com.example.SL.Tech.Store.config.JwtTokenProvider;
 import com.example.SL.Tech.Store.dto.*;
 import com.example.SL.Tech.Store.exception.ResourceNotFoundException;
 import com.example.SL.Tech.Store.model.User;
+import com.example.SL.Tech.Store.model.Product;
 import com.example.SL.Tech.Store.repository.UserRepository;
+import com.example.SL.Tech.Store.repository.ProductRepository;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -16,12 +18,14 @@ import java.util.UUID;
 public class UserServiceImpl {
 
     private final UserRepository userRepository;
+    private final ProductRepository productRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtTokenProvider jwtTokenProvider;
 
-    public UserServiceImpl(UserRepository userRepository, PasswordEncoder passwordEncoder,
+    public UserServiceImpl(UserRepository userRepository, ProductRepository productRepository, PasswordEncoder passwordEncoder,
                            JwtTokenProvider jwtTokenProvider) {
         this.userRepository = userRepository;
+        this.productRepository = productRepository;
         this.passwordEncoder = passwordEncoder;
         this.jwtTokenProvider = jwtTokenProvider;
     }
@@ -179,8 +183,15 @@ public class UserServiceImpl {
     }
 
     // Wishlist operations
+    public List<Product> getWishlistProducts(String userId) {
+        User user = getProfile(userId);
+        if (user.getWishlist() == null || user.getWishlist().isEmpty()) return java.util.Collections.emptyList();
+        return (List<Product>) productRepository.findAllById(user.getWishlist());
+    }
+
     public User addToWishlist(String userId, String productId) {
         User user = getProfile(userId);
+        if (user.getWishlist() == null) user.setWishlist(new java.util.ArrayList<>());
         if (!user.getWishlist().contains(productId)) {
             user.getWishlist().add(productId);
             userRepository.save(user);
@@ -190,8 +201,11 @@ public class UserServiceImpl {
 
     public User removeFromWishlist(String userId, String productId) {
         User user = getProfile(userId);
-        user.getWishlist().remove(productId);
-        return userRepository.save(user);
+        if (user.getWishlist() != null) {
+            user.getWishlist().remove(productId);
+            return userRepository.save(user);
+        }
+        return user;
     }
 
     // Admin operations

@@ -2,7 +2,8 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { FiBox, FiShoppingBag, FiUsers, FiMessageSquare, FiTrendingUp, FiCheckCircle, FiShield, FiUser } from 'react-icons/fi';
 import { userService } from '../../services/userService';
-import type { User } from '../../types';
+import { orderService } from '../../services/orderService';
+import type { User, Order } from '../../types';
 import toast from 'react-hot-toast';
 import './Admin.css';
 
@@ -10,6 +11,9 @@ export default function ManageUsers() {
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
+  
+  const [selectedUserOrders, setSelectedUserOrders] = useState<{ user: User, orders: Order[] } | null>(null);
+  const [ordersLoading, setOrdersLoading] = useState(false);
 
   const load = () => { setLoading(true); userService.getAllUsers().then(r => setUsers(r.data.data || [])).catch(() => {}).finally(() => setLoading(false)); };
   useEffect(load, []);
@@ -18,6 +22,20 @@ export default function ManageUsers() {
     const newRole = currentRole === 'ADMIN' ? 'USER' : 'ADMIN';
     if (!confirm(`Change role to ${newRole}?`)) return;
     try { await userService.updateRole(userId, newRole); toast.success('Role updated'); load(); } catch { toast.error('Failed'); }
+  };
+
+  const viewOrders = async (user: User) => {
+    setOrdersLoading(true);
+    setSelectedUserOrders({ user, orders: [] });
+    try {
+      const res = await orderService.getUserOrdersForAdmin(user.id, 0, 100);
+      setSelectedUserOrders({ user, orders: res.data.data?.content || [] });
+    } catch {
+      toast.error('Failed to load orders');
+      setSelectedUserOrders(null);
+    } finally {
+      setOrdersLoading(false);
+    }
   };
 
   const filtered = users.filter(u => u.name?.toLowerCase().includes(search.toLowerCase()) || u.email?.toLowerCase().includes(search.toLowerCase()));
@@ -69,9 +87,10 @@ export default function ManageUsers() {
                         </span>
                       </td>
                       <td className="text-muted">{u.createdAt ? new Date(u.createdAt).toLocaleDateString() : '-'}</td>
-                      <td>
+                      <td style={{ display: 'flex', gap: 8 }}>
+                        <button className="btn btn-sm btn-outline" onClick={() => viewOrders(u)}>View Orders</button>
                         <button className={`btn btn-sm ${u.role === 'ADMIN' ? 'btn-danger' : 'btn-primary'}`} onClick={() => toggleRole(u.id, u.role)}>
-                          {u.role === 'ADMIN' ? 'Revoke Admin' : 'Make Admin'}
+                          {u.role === 'ADMIN' ? 'Revoke' : 'Make Admin'}
                         </button>
                       </td>
                     </tr>
@@ -82,6 +101,34 @@ export default function ManageUsers() {
           </div>
         )}
       </main>
+
+      {selectedUserOrders && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
+          <div className="card" style={{ padding: 32, width: '100%', maxWidth: 600, maxHeight: '80vh', overflowY: 'auto' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+              <h2 style={{ margin: 0 }}>Orders for {selectedUserOrders.user.name}</h2>
+              <button className="btn btn-sm btn-outline" onClick={() => setSelectedUserOrders(null)}>Close</button>
+            </div>
+            {ordersLoading ? <div className="spinner" /> : (
+              selectedUserOrders.orders.length === 0 ? <p className="empty-state">No orders found.</p> : (
+                <div style={{ display: 'grid', gap: 12 }}>
+                  {selectedUserOrders.orders.map(o => (
+                    <div key={o.id} style={{ border: '1px solid var(--gray-200)', borderRadius: 8, padding: 16 }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
+                        <strong>Order #{o.id?.slice(-8)}</strong>
+                        <span className={`badge ${o.status === 'DELIVERED' ? 'badge-success' : 'badge-info'}`}>{o.status}</span>
+                      </div>
+                      <div style={{ fontSize: 14, color: 'var(--gray-600)' }}>
+                        {new Date(o.createdAt).toLocaleDateString()} • Rs. {o.totalAmount.toLocaleString()} • {o.items.length} items
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -41,6 +41,12 @@ public class OrderController {
     }
 
     @PreAuthorize("hasRole('ADMIN')")
+    @GetMapping("/admin/user/{userId}")
+    public ResponseEntity<ApiResponse<Page<Order>>> getOrdersByUserForAdmin(@PathVariable String userId, @RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "10") int size) {
+        return ResponseEntity.ok(ApiResponse.success(orderService.getUserOrdersForAdmin(userId, page, size)));
+    }
+
+    @PreAuthorize("hasRole('ADMIN')")
     @PutMapping("/{id}/status")
     public ResponseEntity<ApiResponse<Order>> updateStatus(@PathVariable String id, @RequestParam Order.OrderStatus status) {
         return ResponseEntity.ok(ApiResponse.success(orderService.updateOrderStatus(id, status)));

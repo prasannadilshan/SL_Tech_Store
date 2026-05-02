@@ -92,6 +92,10 @@ public class OrderServiceImpl {
         return orderRepository.findByUserId(userId, PageRequest.of(page, size, Sort.by("createdAt").descending()));
     }
 
+    public Page<Order> getUserOrdersForAdmin(String userId, int page, int size) {
+        return orderRepository.findByUserId(userId, PageRequest.of(page, size, Sort.by("createdAt").descending()));
+    }
+
     public Page<Order> getAllOrders(int page, int size, Order.OrderStatus status) {
         Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
         if (status != null) return orderRepository.findByStatus(status, pageable);

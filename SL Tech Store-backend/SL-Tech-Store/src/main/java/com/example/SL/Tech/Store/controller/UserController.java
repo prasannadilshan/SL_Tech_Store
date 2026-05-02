@@ -52,6 +52,11 @@ public class UserController {
         return ResponseEntity.ok(ApiResponse.success(userService.removePaymentMethod(auth.getName(), methodId)));
     }
 
+    @GetMapping("/wishlist")
+    public ResponseEntity<ApiResponse<List<com.example.SL.Tech.Store.model.Product>>> getWishlist(Authentication auth) {
+        return ResponseEntity.ok(ApiResponse.success(userService.getWishlistProducts(auth.getName())));
+    }
+
     @PostMapping("/wishlist/{productId}")
     public ResponseEntity<ApiResponse<User>> addToWishlist(Authentication auth, @PathVariable String productId) {
         return ResponseEntity.ok(ApiResponse.success(userService.addToWishlist(auth.getName(), productId)));

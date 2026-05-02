@@ -17,18 +17,26 @@ public class ReviewServiceImpl {
     private final ReviewRepository reviewRepository;
     private final ProductRepository productRepository;
     private final UserRepository userRepository;
+    private final com.example.SL.Tech.Store.repository.OrderRepository orderRepository;
 
     public ReviewServiceImpl(ReviewRepository reviewRepository, ProductRepository productRepository,
-                             UserRepository userRepository) {
+                             UserRepository userRepository, com.example.SL.Tech.Store.repository.OrderRepository orderRepository) {
         this.reviewRepository = reviewRepository;
         this.productRepository = productRepository;
         this.userRepository = userRepository;
+        this.orderRepository = orderRepository;
     }
 
     public Review createReview(String userId, ReviewRequest request) {
         if (reviewRepository.findByUserIdAndProductId(userId, request.getProductId()).isPresent()) {
             throw new IllegalArgumentException("You have already reviewed this product");
         }
+        
+        boolean hasPurchased = orderRepository.existsByUserIdAndItems_ProductIdAndStatus(userId, request.getProductId(), com.example.SL.Tech.Store.model.Order.OrderStatus.DELIVERED);
+        if (!hasPurchased) {
+            throw new IllegalArgumentException("You can only review products that have been delivered to you.");
+        }
+
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
