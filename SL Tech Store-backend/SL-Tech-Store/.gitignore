@@ -30,6 +30,6 @@ build/
 !**/src/test/**/build/
 application.properties
 google-drive-credentials.json
-
+.application.properties
 ### VS Code ###
 .vscode/
