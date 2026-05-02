@@ -33,46 +33,54 @@ function CheckoutContent() {
       return;
     }
 
-    if (!stripe || !elements) return;
-    
-    setLoading(true);
-
-    try {
-      let paymentIntentId = undefined;
-
-      if (paymentMethod === 'CARD') {
-        const { error: submitError } = await elements.submit();
-        if (submitError) {
-          toast.error(submitError.message || 'Validation failed');
-          setLoading(false);
-          return;
-        }
-
-        const { error, paymentIntent } = await stripe.confirmPayment({
-          elements,
-          redirect: 'if_required',
-        });
-
-        if (error) {
-          toast.error(error.message || 'Payment failed');
-          setLoading(false);
-          return;
-        }
-        paymentIntentId = paymentIntent?.id;
+    if (paymentMethod === 'CARD') {
+      if (!stripe || !elements) return;
+      setLoading(true);
+      const { error: submitError } = await elements.submit();
+      if (submitError) {
+        toast.error(submitError.message || 'Validation failed');
+        setLoading(false);
+        return;
       }
 
-      const data = {
-        items: cart.items.map(i => ({ productId: i.productId, quantity: i.quantity })),
-        shippingAddress: address,
-        deliveryOption: delivery,
-        stripePaymentIntentId: paymentIntentId,
-      };
+      const { error, paymentIntent } = await stripe.confirmPayment({
+        elements,
+        redirect: 'if_required',
+      });
+
+      if (error) {
+        toast.error(error.message || 'Payment failed');
+        setLoading(false);
+        return;
+      }
       
-      const res = await orderService.createOrder(data);
-      toast.success('Order placed successfully!');
-      navigate(`/orders/${res.data.data.id}`);
-    } catch (err: any) { 
-      toast.error(err.response?.data?.message || 'Order failed'); 
+      try {
+        const data = {
+          items: cart.items.map(i => ({ productId: i.productId, quantity: i.quantity })),
+          shippingAddress: address,
+          deliveryOption: delivery,
+          stripePaymentIntentId: paymentIntent?.id,
+        };
+        const res = await orderService.createOrder(data);
+        toast.success('Order placed successfully!');
+        navigate(`/orders/${res.data.data.id}`);
+      } catch (err: any) { 
+        toast.error(err.response?.data?.message || 'Order failed'); 
+      }
+    } else {
+      setLoading(true);
+      try {
+        const data = {
+          items: cart.items.map(i => ({ productId: i.productId, quantity: i.quantity })),
+          shippingAddress: address,
+          deliveryOption: delivery,
+        };
+        const res = await orderService.createOrder(data);
+        toast.success('Order placed successfully!');
+        navigate(`/orders/${res.data.data.id}`);
+      } catch (err: any) { 
+        toast.error(err.response?.data?.message || 'Order failed'); 
+      }
     }
     setLoading(false);
   };
@@ -183,6 +191,8 @@ export default function Checkout() {
   }
 
   return (
-    <></>
+    <Elements stripe={stripePromise} options={{ clientSecret, appearance: { theme: 'stripe' } }}>
+      <CheckoutContent />
+    </Elements>
   );
 }

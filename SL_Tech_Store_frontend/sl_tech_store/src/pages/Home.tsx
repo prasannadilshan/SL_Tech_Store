@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { FiArrowRight, FiStar, FiTruck, FiShield, FiHeadphones } from 'react-icons/fi';
 import { productService } from '../services/productService';

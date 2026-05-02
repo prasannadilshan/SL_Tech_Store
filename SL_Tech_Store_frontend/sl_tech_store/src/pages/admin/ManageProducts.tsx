@@ -237,11 +237,11 @@ export default function ManageProducts() {
 
                 {imagePreviews.length > 0 && (
                   <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginBottom: 16 }}>
-                    {imagePreviews.map((src, i) => (
-                      <div key={i} style={{ position: 'relative', width: 90, height: 90, borderRadius: 10, overflow: 'hidden', border: (existingImages.length === 0 && i === 0) ? '3px solid var(--primary-500)' : '2px solid var(--gray-200)' }}>
+                    {imagePreviews.map((src, _i) => (
+                      <div key={_i} style={{ position: 'relative', width: 90, height: 90, borderRadius: 10, overflow: 'hidden', border: (existingImages.length === 0 && _i === 0) ? '3px solid var(--primary-500)' : '2px solid var(--gray-200)' }}>
                         <img src={src} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                        <button type="button" onClick={() => removePreview(i)} style={{ position: 'absolute', top: 2, right: 2, width: 22, height: 22, borderRadius: '50%', background: 'var(--danger)', color: 'white', border: 'none', fontSize: 12, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><FiX /></button>
-                        {(existingImages.length === 0 && i === 0) && <span style={{ position: 'absolute', bottom: 0, left: 0, right: 0, background: 'var(--primary-600)', color: 'white', fontSize: 9, textAlign: 'center', padding: '2px 0', fontWeight: 700 }}>NEW PRIMARY</span>}
+                        <button type="button" onClick={() => removePreview(_i)} style={{ position: 'absolute', top: 2, right: 2, width: 22, height: 22, borderRadius: '50%', background: 'var(--danger)', color: 'white', border: 'none', fontSize: 12, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><FiX /></button>
+                        {(existingImages.length === 0 && _i === 0) && <span style={{ position: 'absolute', bottom: 0, left: 0, right: 0, background: 'var(--primary-600)', color: 'white', fontSize: 9, textAlign: 'center', padding: '2px 0', fontWeight: 700 }}>NEW PRIMARY</span>}
                       </div>
                     ))}
                   </div>

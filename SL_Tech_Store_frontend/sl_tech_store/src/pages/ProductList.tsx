@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { FiStar, FiFilter, FiSearch, FiChevronDown } from 'react-icons/fi';
+import { FiStar, FiFilter, FiSearch } from 'react-icons/fi';
 import { productService } from '../services/productService';
 import { getImageUrl } from '../services/api';
 import type { Product } from '../types';

@@ -14,8 +14,8 @@ export default function AdminChat() {
   const [onlineStatus, setOnlineStatus] = useState<string>('');
   const { user } = useAuthStore();
   const bottomRef = useRef<HTMLDivElement>(null);
-  const intervalRef = useRef<ReturnType<typeof setInterval>>();
-  const pingIntervalRef = useRef<ReturnType<typeof setInterval>>();
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const pingIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   useEffect(() => {
     api.get('/chat/rooms').then(r => setRooms(r.data.data || [])).catch(() => {});
@@ -47,7 +47,7 @@ export default function AdminChat() {
           setOnlineStatus('Offline');
           return;
         }
-        const lastSeen = new Date(r.data.data + 'Z'); // Add Z to fix UTC parsing
+        new Date(r.data.data + 'Z'); // Add Z to fix UTC parsing
         const now = new Date();
         // Since the server time is local, wait, LocalDateTime is tricky.
         // Assuming server and client are in the same zone or using relative time

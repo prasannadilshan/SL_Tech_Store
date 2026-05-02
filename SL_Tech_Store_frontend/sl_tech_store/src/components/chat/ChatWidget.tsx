@@ -13,8 +13,8 @@ export default function ChatWidget() {
   const [adminStatus, setAdminStatus] = useState<string>('Support Team');
   const { user } = useAuthStore();
   const bottomRef = useRef<HTMLDivElement>(null);
-  const intervalRef = useRef<ReturnType<typeof setInterval>>();
-  const pingIntervalRef = useRef<ReturnType<typeof setInterval>>();
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const pingIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   useEffect(() => {
     if (!open) return;
