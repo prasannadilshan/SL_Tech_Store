@@ -33,9 +33,15 @@ export default function Login() {
         login(res.data.data);
         toast.success('Welcome!');
         navigate('/');
-      } catch { toast.error('Google login failed'); }
+      } catch (error) {
+        console.error('Backend Google login failed:', error);
+        toast.error('Google login failed at backend');
+      }
     },
-    onError: () => toast.error('Google login failed'),
+    onError: (error) => {
+      console.error('Google Login Error:', error);
+      toast.error('Google login popup failed or was blocked');
+    },
   });
 
   return (
@@ -59,7 +65,7 @@ export default function Login() {
           </button>
         </form>
         <div style={{ textAlign: 'center', margin: '20px 0', color: 'var(--gray-400)', fontSize: 13 }}>or continue with</div>
-        <button onClick={() => googleLogin()} className="btn btn-secondary" style={{ width: '100%', justifyContent: 'center' }}>
+        <button type="button" onClick={() => googleLogin()} className="btn btn-secondary" style={{ width: '100%', justifyContent: 'center' }}>
           <FcGoogle size={20} /> Sign in with Google
         </button>
         <p style={{ textAlign: 'center', marginTop: 24, fontSize: 14, color: 'var(--gray-500)' }}>
